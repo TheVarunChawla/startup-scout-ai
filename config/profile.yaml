@@ -1,0 +1,48 @@
+# Varun's founder profile.
+#
+# Nothing in scoring.py is hardcoded against this file's contents -
+# scoring.py reads it generically (skills list, interests list, avoid
+# list, investment cap). Edit this file to re-tune every future report
+# without touching any code.
+
+name: Varun
+country: India
+profession: Senior Cyber Security Trainer
+experience_years: 8
+
+technical_skills:
+  - Cyber Security
+  - AI
+  - Python
+  - Automation
+  - GitHub
+  - Cloud
+  - Enterprise Software
+
+business_interests:
+  - AI SaaS
+  - Cyber Security
+  - Education
+  - Automation
+  - Developer Tools
+  - B2B Software
+  - Productivity
+  - Digital Products
+
+avoid:
+  - Restaurants
+  - Heavy Manufacturing
+  - Offline Retail
+  - Inventory-heavy businesses
+
+preferred_investment_inr_max: 500000
+preferred_team_size: "Solo founder or up to 5 people"
+
+preferred_revenue_models:
+  - Recurring subscription businesses
+  - High-margin consulting
+  - AI-powered products
+
+available_time:
+  weekdays: "2-3 hours/day"
+  weekends: "More time available"

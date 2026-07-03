@@ -1,0 +1,36 @@
+name: Daily Startup Scout Run
+
+on:
+  schedule:
+    - cron: "30 3 * * *"  # 09:00 IST daily
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily pipeline
+        env:
+          PRODUCT_HUNT_TOKEN: ${{ secrets.PRODUCT_HUNT_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python main.py run
+
+      - name: Commit report and database
+        run: |
+          git config user.name "startup-scout-bot"
+          git config user.email "actions@github.com"
+          git add reports/ data/
+          git diff --cached --quiet || git commit -m "Daily report: $(date +%F)"
+          git push

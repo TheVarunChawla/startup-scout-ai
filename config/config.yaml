@@ -1,0 +1,117 @@
+# Startup Scout AI - application configuration.
+#
+# `connectors` controls which data sources run and how. Every key here
+# corresponds to one entry in startup_scout/connectors/CONNECTOR_TYPES.
+# Setting `enabled: false` (or omitting a source) is how you turn a
+# connector off without deleting its config.
+
+connectors:
+  hacker_news:
+    enabled: true
+    type: hacker_news
+    query: "startup"
+    max_results: 30
+
+  product_hunt:
+    enabled: true
+    type: product_hunt
+    max_results: 20
+    # requires env var PRODUCT_HUNT_TOKEN - see .env.example.
+    # Runs safely with an empty result set if the token isn't set.
+
+  y_combinator:
+    enabled: false
+    type: stub
+    reason: "No public bulk API; YC company directory has no export endpoint."
+
+  yc_requests_for_startups:
+    enabled: false
+    type: stub
+    reason: "Static page; needs a permitted HTML parse of the official RFS list."
+
+  indie_hackers:
+    enabled: false
+    type: stub
+    reason: "No public API; ToS restricts automated scraping."
+
+  betalist:
+    enabled: false
+    type: stub
+    reason: "No public API documented."
+
+  techcrunch:
+    enabled: false
+    type: stub
+    reason: "Has an RSS feed (https://techcrunch.com/feed/) - good candidate for the next real connector."
+
+  crunchbase:
+    enabled: false
+    type: stub
+    reason: "Requires a paid Crunchbase API license."
+
+  wellfound:
+    enabled: false
+    type: stub
+    reason: "No public API; ToS restricts automated scraping."
+
+  f6s:
+    enabled: false
+    type: stub
+    reason: "No public API."
+
+  openvc:
+    enabled: false
+    type: stub
+    reason: "No public API documented."
+
+  seedtable:
+    enabled: false
+    type: stub
+    reason: "No public API documented."
+
+  reddit_startups:
+    enabled: false
+    type: stub
+    reason: "Needs a free Reddit OAuth app + PRAW - good candidate for the next real connector."
+
+  github_trending:
+    enabled: false
+    type: stub
+    reason: "No official API; scraping github.com/trending needs an explicit policy decision."
+
+  ai_newsletters:
+    enabled: false
+    type: stub
+    reason: "Needs per-newsletter RSS/email parsing configuration."
+
+  startup_newsletters:
+    enabled: false
+    type: stub
+    reason: "Needs per-newsletter RSS/email parsing configuration."
+
+# Sub-score weights used by startup_scout/scoring.py. Must sum to 100.
+scoring:
+  weights:
+    skills_match: 15
+    interests_match: 15
+    low_investment: 10
+    india_readiness: 10
+    ai_potential: 10
+    ease_of_execution: 10
+    revenue_potential: 10
+    competition: 10
+    scalability: 5
+    long_term_opportunity: 5
+
+report:
+  top_n: 5
+  output_dir: reports
+
+database:
+  path: data/startup_scout.db
+
+analysis:
+  # heuristic (default, no external calls) | llm (requires ANTHROPIC_API_KEY)
+  mode: heuristic
+  llm_provider: anthropic
+  llm_model: claude-sonnet-5
