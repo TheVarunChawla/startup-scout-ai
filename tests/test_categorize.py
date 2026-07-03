@@ -20,3 +20,16 @@ def test_education_detected():
 def test_unknown_falls_back_to_other():
     s = RawStartup(source="x", name="Mystery", url="", description="")
     assert categorize(s) == "Other"
+
+
+def test_own_description_beats_generic_source_tag():
+    # Regression test: a YC-style generic industry tag ("Developer Tools")
+    # should not out-vote a clear signal in the company's own description.
+    s = RawStartup(
+        source="y_combinator",
+        name="Klarify",
+        url="",
+        description="AI Agent for Therapists",
+        tags=["y_combinator", "Developer Tools"],
+    )
+    assert categorize(s) == "AI SaaS"

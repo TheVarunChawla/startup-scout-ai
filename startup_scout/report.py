@@ -103,7 +103,7 @@ class ReportGenerator:
         add("### Fastest Growing Categories")
         if trends.fastest_growing:
             for category, growth in trends.fastest_growing:
-                add(f"- {category}: {growth:+.0%} vs. last week")
+                add(f"- {category}: {growth}")
         else:
             add("- Not enough historical data yet - check back after a few weeks of runs.")
         add("")
