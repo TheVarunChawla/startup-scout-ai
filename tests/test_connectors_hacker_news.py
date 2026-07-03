@@ -46,3 +46,74 @@ def test_safe_fetch_swallows_exceptions():
         connector = HackerNewsConnector({})
         results = connector.safe_fetch()
     assert results == []
+
+
+def test_fetch_excludes_ask_hn_threads():
+    fake_response = Mock()
+    fake_response.raise_for_status = lambda: None
+    fake_response.json = lambda: {
+        "hits": [
+            {
+                "title": "Ask HN: How do you validate startup ideas?",
+                "url": "https://news.ycombinator.com/item?id=1",
+                "_tags": ["story", "ask_hn"],
+                "objectID": "1",
+            },
+            {
+                "title": "Show HN: My Cool Startup",
+                "url": "https://example.com",
+                "_tags": ["story", "show_hn"],
+                "objectID": "2",
+            },
+        ]
+    }
+    with patch("startup_scout.connectors.hacker_news.requests.get", return_value=fake_response):
+        connector = HackerNewsConnector({})
+        results = connector.fetch()
+    assert len(results) == 1
+    assert results[0].name == "My Cool Startup"
+
+
+def test_fetch_excludes_known_news_domains():
+    fake_response = Mock()
+    fake_response.raise_for_status = lambda: None
+    fake_response.json = lambda: {
+        "hits": [
+            {
+                "title": "Startup sues Big Corp over AI claims",
+                "url": "https://www.theregister.com/legal/story",
+                "_tags": ["story"],
+                "objectID": "3",
+            },
+            {
+                "title": "My New SaaS Tool",
+                "url": "https://mysaas.com",
+                "_tags": ["story"],
+                "objectID": "4",
+            },
+        ]
+    }
+    with patch("startup_scout.connectors.hacker_news.requests.get", return_value=fake_response):
+        connector = HackerNewsConnector({})
+        results = connector.fetch()
+    assert len(results) == 1
+    assert results[0].name == "My New SaaS Tool"
+
+
+def test_exclude_domains_setting_is_additive():
+    fake_response = Mock()
+    fake_response.raise_for_status = lambda: None
+    fake_response.json = lambda: {
+        "hits": [
+            {
+                "title": "Some Post",
+                "url": "https://customblocked.example.com/post",
+                "_tags": ["story"],
+                "objectID": "5",
+            },
+        ]
+    }
+    with patch("startup_scout.connectors.hacker_news.requests.get", return_value=fake_response):
+        connector = HackerNewsConnector({"exclude_domains": ["customblocked.example.com"]})
+        results = connector.fetch()
+    assert results == []

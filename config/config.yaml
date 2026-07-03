@@ -11,6 +11,8 @@ connectors:
     type: hacker_news
     query: "startup"
     max_results: 30
+    exclude_ask_hn: true  # drop "Ask HN:" / "Tell HN:" / "Poll:" discussion threads
+    exclude_domains: []    # extra domains to exclude, beyond the connector's built-in news-site list
 
   product_hunt:
     enabled: true

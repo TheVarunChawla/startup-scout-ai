@@ -78,22 +78,17 @@ Nothing about *what* to score or *how much* to weight it is hardcoded — it all
 
 ## Connector status
 
-| Connector | Status | Notes |
+| Connector | Status | Why |
 |---|---|---|
-| Hacker News | **Live** | Free Algolia HN Search API, no key required. |
+| Hacker News | **Live** | Free Algolia HN Search API, no key required. Filters out Ask HN/Tell HN/Poll discussion threads and major news-site domains so only startup listings come through. |
 | Product Hunt | **Live**, needs credential | Free GraphQL API v2, requires `PRODUCT_HUNT_TOKEN` env var. Runs and returns `[]` with a warning if unset — never breaks the pipeline. |
-| Y Combinator | Stub | No public bulk API. |
-| YC Requests for Startups | Stub | Static page; needs a permitted HTML parse. |
-| Indie Hackers | Stub | No public API; ToS restricts scraping. |
-| BetaList | Stub | No public API documented. |
-| TechCrunch Startups | Stub | Has an RSS feed — good candidate for the next real connector. |
-| Crunchbase | Stub | Requires a paid API license. |
-| Wellfound | Stub | No public API; ToS restricts scraping. |
-| F6S | Stub | No public API. |
-| OpenVC | Stub | No public API documented. |
-| Seedtable | Stub | No public API documented. |
-| Reddit startup communities | Stub | Needs a free Reddit OAuth app + PRAW — good candidate for the next real connector. |
-| GitHub Trending | Stub | No official API; scraping github.com/trending needs an explicit policy decision. |
+| Y Combinator directory | Stub | No public export/API |
+| YC Requests for Startups | Stub | Static page, would need scraping |
+| Wellfound, Indie Hackers, F6S, OpenVC, Seedtable, BetaList | Stub | No public API, most ToS-restrict scraping |
+| Crunchbase | Stub | API exists but requires a paid license |
+| Reddit | Stub | Needs a free OAuth app registration (5-minute setup, then it's a real connector) |
+| GitHub Trending | Stub | No official API — scraping is common practice but flagged here as a policy decision |
+| TechCrunch | Stub | Has a public RSS feed — this is the easiest one to make real |
 | AI / startup newsletters | Stub | Needs per-newsletter RSS/email parsing config. |
 
 Every stub is a `StubConnector` instance (see `startup_scout/connectors/stubs.py`) that implements the same `BaseConnector` interface, logs why it's not live, and returns `[]`. Turning one on later means writing one connector class and flipping `enabled: true` in `config.yaml` — nothing else in the pipeline changes.
