@@ -72,9 +72,13 @@ connectors:
     reason: "No public API documented."
 
   reddit_startups:
-    enabled: false
-    type: stub
-    reason: "Needs a free Reddit OAuth app + PRAW - good candidate for the next real connector."
+    enabled: true
+    type: reddit
+    subreddits: ["startups", "SideProject", "Entrepreneur"]
+    listing: new
+    max_results: 15
+    # requires env vars REDDIT_CLIENT_ID and REDDIT_CLIENT_SECRET - see .env.example.
+    # Runs safely with an empty result set if they aren't set.
 
   github_trending:
     enabled: false
