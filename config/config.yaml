@@ -42,9 +42,9 @@ connectors:
     reason: "No public API documented."
 
   techcrunch:
-    enabled: false
-    type: stub
-    reason: "Has an RSS feed (https://techcrunch.com/feed/) - good candidate for the next real connector."
+    enabled: true
+    type: techcrunch
+    max_results: 20
 
   crunchbase:
     enabled: false
