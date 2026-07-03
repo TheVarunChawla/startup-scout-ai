@@ -17,7 +17,7 @@ WEIGHTS = {
 PROFILE = {
     "technical_skills": ["Cyber Security", "AI", "Python", "Automation"],
     "business_interests": ["AI SaaS", "Cyber Security"],
-    "avoid": ["Restaurants", "Offline Retail"],
+    "avoid": ["Restaurants", "Heavy Manufacturing", "Offline Retail", "Inventory-heavy businesses"],
     "preferred_investment_inr_max": 500000,
 }
 
@@ -80,3 +80,31 @@ def test_skills_match_does_not_false_positive_on_unrelated_text():
     unrelated.raw.tags = []
     result = scorer.score(unrelated)
     assert result.breakdown.skills_match == 0
+
+
+def test_avoid_list_hard_caps_inventory_pos_listing():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    tridly_style = _analyzed(category="B2B Software", cost="\u20b975,000", india="High - test")
+    tridly_style.raw.name = "Tridly"
+    tridly_style.raw.description = (
+        "An all-in-one POS, Smart Inventory Tracker, Automated Invoicing "
+        "system, and Instant WhatsApp Store builder for small businesses."
+    )
+    result = scorer.score(tridly_style)
+    assert result.score <= 5.0
+
+
+def test_avoid_list_hard_caps_restaurant_listing():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    restaurant_style = _analyzed(category="Other")
+    restaurant_style.raw.name = "TableTime"
+    restaurant_style.raw.description = "A reservation and table management app for restaurants and cafes."
+    result = scorer.score(restaurant_style)
+    assert result.score <= 5.0
+
+
+def test_avoid_list_does_not_affect_unrelated_listings():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    good = _analyzed(category="AI SaaS")
+    result = scorer.score(good)
+    assert result.score > 5.0

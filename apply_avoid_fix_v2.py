@@ -1,4 +1,36 @@
-"""Personal scoring: maps an AnalyzedStartup -> 0-100 score against
+"""
+One-off script to fix a real scoring bug: the "avoid" list (Restaurants,
+Heavy Manufacturing, Offline Retail, Inventory-heavy businesses) never
+actually excluded anything, because it only checked the assigned
+CATEGORY label ("B2B Software", "AI SaaS", etc.) against the avoid
+list - and none of our category names contain words like "retail" or
+"inventory", so the check was structurally incapable of firing. This
+let Tridly (a POS + inventory tracker) score 69.2/100 and land in the
+top 5, directly contradicting a stated hard constraint.
+
+Fix: check the actual listing text (name + description + tags) against
+a curated keyword list per avoid category, and if it matches, hard-cap
+the final score at 5/100 - low enough that it can never compete with a
+genuinely good match, regardless of how well it scores on every other
+criterion.
+
+Usage: put this file in the ROOT of your startup-scout-ai_repo folder
+(next to main.py) and run:
+
+    python apply_avoid_fix_v2.py
+
+Then:
+
+    python -m pytest
+    git add -A
+    git commit -m "Fix avoid-list: check listing text, not just category label, and hard-cap matches"
+    git push
+"""
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+
+SCORING_PY = '''"""Personal scoring: maps an AnalyzedStartup -> 0-100 score against
 Varun's profile (config/profile.yaml).
 
 Design: each criterion produces a 0-10 sub-score, weights (summing to
@@ -102,7 +134,7 @@ class PersonalScorer:
         hits = 0
         for skill in skills:
             words = _tokenize_skill(skill)
-            if words and any(re.search(rf"\b{re.escape(w)}\b", text) for w in words):
+            if words and any(re.search(rf"\\b{re.escape(w)}\\b", text) for w in words):
                 hits += 1
         return min(10.0, hits * 2.5)
 
@@ -112,7 +144,7 @@ class PersonalScorer:
         return 10.0 if any(i in cat_lower or cat_lower in i for i in interests) else 4.0
 
     def _low_investment(self, mvp_cost_str: str) -> float:
-        # Parse the *lower* bound out of strings like "\u20b975,000 - \u20b93,00,000".
+        # Parse the *lower* bound out of strings like "\\u20b975,000 - \\u20b93,00,000".
         digits = "".join(c for c in mvp_cost_str.split("-")[0] if c.isdigit())
         if not digits:
             return 5.0
@@ -178,3 +210,69 @@ def _searchable_text(analyzed: AnalyzedStartup) -> str:
             analyzed.analysis.business_model,
         ]
     ).lower()
+'''
+
+TEST_APPEND = '''
+
+def test_avoid_list_hard_caps_inventory_pos_listing():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    tridly_style = _analyzed(category="B2B Software", cost="\\u20b975,000", india="High - test")
+    tridly_style.raw.name = "Tridly"
+    tridly_style.raw.description = (
+        "An all-in-one POS, Smart Inventory Tracker, Automated Invoicing "
+        "system, and Instant WhatsApp Store builder for small businesses."
+    )
+    result = scorer.score(tridly_style)
+    assert result.score <= 5.0
+
+
+def test_avoid_list_hard_caps_restaurant_listing():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    restaurant_style = _analyzed(category="Other")
+    restaurant_style.raw.name = "TableTime"
+    restaurant_style.raw.description = "A reservation and table management app for restaurants and cafes."
+    result = scorer.score(restaurant_style)
+    assert result.score <= 5.0
+
+
+def test_avoid_list_does_not_affect_unrelated_listings():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    good = _analyzed(category="AI SaaS")
+    result = scorer.score(good)
+    assert result.score > 5.0
+'''
+
+
+def main():
+    scoring_path = ROOT / "startup_scout" / "scoring.py"
+    scoring_path.write_text(SCORING_PY, encoding="utf-8")
+    print(f"Wrote {scoring_path}")
+
+    test_scoring_path = ROOT / "tests" / "test_scoring.py"
+    content = test_scoring_path.read_text(encoding="utf-8")
+
+    old_profile_avoid = '"avoid": ["Restaurants", "Offline Retail"],'
+    new_profile_avoid = '"avoid": ["Restaurants", "Heavy Manufacturing", "Offline Retail", "Inventory-heavy businesses"],'
+    if new_profile_avoid in content:
+        print(f"{test_scoring_path} PROFILE avoid list already up to date")
+    elif old_profile_avoid in content:
+        content = content.replace(old_profile_avoid, new_profile_avoid)
+        test_scoring_path.write_text(content, encoding="utf-8")
+        print(f"Widened avoid list in {test_scoring_path}")
+    else:
+        print(f"WARNING: expected PROFILE avoid line not found in {test_scoring_path} - check manually")
+
+    content = test_scoring_path.read_text(encoding="utf-8")
+    if "test_avoid_list_hard_caps_inventory_pos_listing" in content:
+        print(f"{test_scoring_path} already has the new tests, skipping")
+    else:
+        test_scoring_path.write_text(content + TEST_APPEND, encoding="utf-8")
+        print(f"Appended new tests to {test_scoring_path}")
+
+    print("All done. Now run: python -m pytest")
+
+
+if __name__ == "__main__":
+    main()
+
+# END OF FILE MARKER 12345
