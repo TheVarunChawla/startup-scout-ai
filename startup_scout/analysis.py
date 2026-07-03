@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 
 from startup_scout.categorize import categorize
 from startup_scout.models import Analysis, AnalyzedStartup, RawStartup
@@ -37,6 +38,25 @@ Description: {description}
 Source: {source}
 Tags: {tags}
 """
+
+# Standalone acronyms need word-boundary matching - checking these as raw
+# substrings produces constant false positives ("ai" inside "domain",
+# "email", "waiting"; "ml" inside "html"). Longer, more specific phrases
+# are safe to match as plain substrings since they rarely appear inside
+# unrelated words.
+_AI_ACRONYM_PATTERN = re.compile(r"\b(ai|ml|llm|gpt|nlp|genai)\b")
+_AI_PHRASE_KEYWORDS = (
+    "artificial intelligence", "machine learning", "generative ai",
+    "large language model", "neural network", "deep learning",
+    "chatgpt", "openai", "computer vision", "natural language processing",
+)
+
+
+def _looks_ai_driven(text: str) -> bool:
+    lowered = text.lower()
+    if _AI_ACRONYM_PATTERN.search(lowered):
+        return True
+    return any(phrase in lowered for phrase in _AI_PHRASE_KEYWORDS)
 
 
 class AIAnalyzer:
@@ -89,10 +109,7 @@ class AIAnalyzer:
 
     def _analyze_heuristic(self, raw: RawStartup) -> Analysis:
         text = f"{raw.name} {raw.description} {' '.join(raw.tags)}".lower()
-        ai_usage = (
-            "Likely AI-driven" if any(k in text for k in ("ai", "ml", "llm", "gpt"))
-            else "Not evident from listing"
-        )
+        ai_usage = "Likely AI-driven" if _looks_ai_driven(text) else "Not evident from listing"
         technical_complexity = _estimate_complexity(text)
         mvp_cost, mvp_weeks = _estimate_mvp(technical_complexity)
 
@@ -132,9 +149,9 @@ def _estimate_complexity(text: str) -> str:
 
 def _estimate_mvp(complexity: str) -> tuple[str, str]:
     return {
-        "Low": ("₹20,000 - ₹75,000", "1-3 weeks"),
-        "Medium": ("₹75,000 - ₹3,00,000", "4-8 weeks"),
-        "High": ("₹3,00,000 - ₹10,00,000+", "10+ weeks"),
+        "Low": ("\u20b920,000 - \u20b975,000", "1-3 weeks"),
+        "Medium": ("\u20b975,000 - \u20b93,00,000", "4-8 weeks"),
+        "High": ("\u20b93,00,000 - \u20b910,00,000+", "10+ weeks"),
     }[complexity]
 
 

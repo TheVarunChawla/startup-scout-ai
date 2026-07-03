@@ -9,10 +9,23 @@ without ever letting it overwhelm the base fit-to-profile score.
 """
 from __future__ import annotations
 
+import re
+
 from startup_scout.memory import MemoryStore
 from startup_scout.models import AnalyzedStartup, ScoreBreakdown, ScoredStartup
 
 MAX_MEMORY_ADJUSTMENT = 10.0
+
+_SKILL_STOPWORDS = {"and", "or", "the", "of", "for"}
+
+
+def _tokenize_skill(skill: str) -> list[str]:
+    """Break a (possibly multi-word) skill into its significant words, so
+    "Cyber Security" matches text that only says "security" - requiring
+    the full literal phrase was systematically under-scoring relevant
+    listings that only used part of a two-word skill name."""
+    words = re.findall(r"[a-z0-9]+", skill.lower())
+    return [w for w in words if w not in _SKILL_STOPWORDS]
 
 
 class PersonalScorer:
@@ -56,8 +69,12 @@ class PersonalScorer:
     # -- individual sub-scorers, each returns 0-10 -------------------------
 
     def _skills_match(self, text: str) -> float:
-        skills = [s.lower() for s in self.profile.get("technical_skills", [])]
-        hits = sum(1 for s in skills if s in text)
+        skills = self.profile.get("technical_skills", [])
+        hits = 0
+        for skill in skills:
+            words = _tokenize_skill(skill)
+            if words and any(re.search(rf"\b{re.escape(w)}\b", text) for w in words):
+                hits += 1
         return min(10.0, hits * 2.5)
 
     def _interests_match(self, category: str) -> float:
@@ -69,7 +86,7 @@ class PersonalScorer:
         return 10.0 if any(i in cat_lower or cat_lower in i for i in interests) else 4.0
 
     def _low_investment(self, mvp_cost_str: str) -> float:
-        # Parse the *lower* bound out of strings like "₹75,000 - ₹3,00,000".
+        # Parse the *lower* bound out of strings like "\u20b975,000 - \u20b93,00,000".
         digits = "".join(c for c in mvp_cost_str.split("-")[0] if c.isdigit())
         if not digits:
             return 5.0

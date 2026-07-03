@@ -60,3 +60,23 @@ def test_high_complexity_scores_lower_than_low_complexity():
 
 def test_weights_sum_to_100_in_sample_config():
     assert sum(WEIGHTS.values()) == 100
+
+
+def test_skills_match_on_partial_word_not_exact_phrase():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    # Profile skill is "Cyber Security" (two words); listing only says
+    # "security", never the exact phrase - should still count as a hit.
+    k8scan_style = _analyzed(category="Cyber Security")
+    k8scan_style.raw.description = "An open-source Kubernetes security scanner running security checks."
+    result = scorer.score(k8scan_style)
+    assert result.breakdown.skills_match > 0
+
+
+def test_skills_match_does_not_false_positive_on_unrelated_text():
+    scorer = PersonalScorer(WEIGHTS, PROFILE, memory=None)
+    unrelated = _analyzed(category="Other")
+    unrelated.raw.name = "Random Newsletter Tool"
+    unrelated.raw.description = "A simple weekly email digest for readers, no tech skills mentioned here."
+    unrelated.raw.tags = []
+    result = scorer.score(unrelated)
+    assert result.breakdown.skills_match == 0
