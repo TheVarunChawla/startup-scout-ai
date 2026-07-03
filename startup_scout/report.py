@@ -1,9 +1,15 @@
-"""Markdown daily report generation.
+"""Markdown weekly report generation.
 
 Renders the sections required by the spec (executive summary, top 5,
-trends, recommendation of the day, 30-day plan, risks, budget, timeline,
-tech stack) from a list of ScoredStartup + a TrendReport. Pure string
-templating - no Jinja dependency needed for a document this structured.
+trends, recommendation of the week, 30-day plan, risks, budget,
+timeline, tech stack) from a list of ScoredStartup + a TrendReport.
+Pure string templating - no Jinja dependency needed for a document
+this structured.
+
+Each pick also gets a plain-English "what they do" line (using the
+source's own one-liner when available, since that is usually clearer
+than an auto-truncated description) and a simple, jargon-free note on
+how you could build something similar yourself.
 """
 from __future__ import annotations
 
@@ -13,6 +19,31 @@ from pathlib import Path
 
 from startup_scout.models import ScoredStartup
 from startup_scout.trends import TrendReport
+
+
+def _plain_what_they_do(item: ScoredStartup) -> str:
+    one_liner = (item.analyzed.raw.raw_meta or {}).get("one_liner", "").strip()
+    if one_liner:
+        return one_liner
+    return item.analyzed.analysis.problem
+
+
+def _plain_how_to_build(item: ScoredStartup) -> str:
+    complexity = item.analyzed.analysis.technical_complexity
+    category = item.analyzed.analysis.category
+    mvp_weeks = item.analyzed.analysis.estimated_mvp_time_weeks
+
+    complexity_line = {
+        "Low": "This looks simple to build - a lot of it could come from ready-made tools plus a bit of your own code.",
+        "Medium": "This is medium difficulty - you would need a working app plus 1-2 features that genuinely work well.",
+        "High": "This is a harder build - it likely needs real technical depth before it feels like a finished product.",
+    }.get(complexity, "How hard this is to build isn't clear from the listing alone - worth a closer look.")
+
+    return (
+        f"Pick ONE core problem this solves, build just that one part first, and show it to "
+        f"5-10 people in the \"{category}\" space before adding anything else. {complexity_line} "
+        f"Rough time to a testable first version: {mvp_weeks}."
+    )
 
 
 class ReportGenerator:
@@ -46,11 +77,11 @@ class ReportGenerator:
         lines: list[str] = []
         add = lines.append
 
-        add(f"# Startup Scout AI — Daily Report ({run_date.isoformat()})")
+        add(f"# Startup Scout AI - Weekly Report ({run_date.isoformat()})")
         add("")
         add("## Executive Summary")
         add(
-            f"Collected and scored {len(ranked)} candidate opportunities today. "
+            f"Collected and scored {len(ranked)} candidate opportunities this week. "
             f"{len(top)} are highlighted below as the strongest matches for Varun's profile."
         )
         add("")
@@ -58,11 +89,11 @@ class ReportGenerator:
         add("## Top 5 Opportunities")
         for i, item in enumerate(top, start=1):
             a = item.analyzed.analysis
-            add(f"### {i}. {item.name} — Score: {item.score}/100")
+            add(f"### {i}. {item.name} - Score: {item.score}/100")
             add(f"- **Source:** {item.analyzed.raw.source} | **Category:** {a.category}")
             add(f"- **URL:** {item.analyzed.raw.url}")
-            add(f"- **Problem:** {a.problem}")
-            add(f"- **Business model:** {a.business_model}")
+            add(f"- **What they do:** {_plain_what_they_do(item)}")
+            add(f"- **How you could build something like this:** {_plain_how_to_build(item)}")
             add(f"- **India suitability:** {a.india_suitability}")
             add(f"- **Estimated MVP cost:** {a.estimated_mvp_cost_inr} | **Time:** {a.estimated_mvp_time_weeks}")
             add(f"- **Id (for feedback):** `{item.id}`")
@@ -72,9 +103,9 @@ class ReportGenerator:
         add("### Fastest Growing Categories")
         if trends.fastest_growing:
             for category, growth in trends.fastest_growing:
-                add(f"- {category}: {growth:+.0%} vs. prior period")
+                add(f"- {category}: {growth:+.0%} vs. last week")
         else:
-            add("- Not enough historical data yet - check back after a few days of runs.")
+            add("- Not enough historical data yet - check back after a few weeks of runs.")
         add("")
 
         add("### New Technologies")
@@ -88,8 +119,8 @@ class ReportGenerator:
         if top:
             best = top[0]
             a = best.analyzed.analysis
-            add("## Recommended Opportunity of the Day")
-            add(f"**{best.name}** ({a.category}) — Score {best.score}/100")
+            add("## Recommended Opportunity of the Week")
+            add(f"**{best.name}** ({a.category}) - Score {best.score}/100")
             add("")
 
             add('## "Why This Fits Varun"')
@@ -114,7 +145,7 @@ class ReportGenerator:
             add("")
 
             add("## Estimated Budget")
-            add(f"- {a.estimated_mvp_cost_inr} (within the ₹5 lakh preferred cap)")
+            add(f"- {a.estimated_mvp_cost_inr} (within the Rs 5 lakh preferred cap)")
             add("")
 
             add("## Expected Timeline")
@@ -130,8 +161,8 @@ class ReportGenerator:
             )
             add("")
         else:
-            add("## Recommended Opportunity of the Day")
-            add("- No candidates scored today - check connector configuration.")
+            add("## Recommended Opportunity of the Week")
+            add("- No candidates scored this week - check connector configuration.")
             add("")
 
         return "\n".join(lines)

@@ -29,7 +29,7 @@ def test_report_contains_required_sections(tmp_path):
         "Executive Summary",
         "Top 5 Opportunities",
         "Trend Analysis",
-        "Recommended Opportunity of the Day",
+        "Recommended Opportunity of the Week",
         "Why This Fits Varun",
         "30-Day MVP Plan",
         "Risks",
@@ -59,4 +59,4 @@ def test_report_handles_empty_input(tmp_path):
 
     path = generator.generate([], trends, run_date=date(2026, 1, 3))
     content = path.read_text(encoding="utf-8")
-    assert "No candidates scored today" in content
+    assert "No candidates scored this week" in content

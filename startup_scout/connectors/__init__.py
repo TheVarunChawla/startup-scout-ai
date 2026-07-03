@@ -7,12 +7,14 @@ from startup_scout.connectors.product_hunt import ProductHuntConnector
 from startup_scout.connectors.reddit import RedditConnector
 from startup_scout.connectors.stubs import StubConnector
 from startup_scout.connectors.techcrunch import TechCrunchConnector
+from startup_scout.connectors.ycombinator import YCombinatorConnector
 
 CONNECTOR_TYPES: dict[str, type[BaseConnector]] = {
     "hacker_news": HackerNewsConnector,
     "product_hunt": ProductHuntConnector,
     "techcrunch": TechCrunchConnector,
     "reddit": RedditConnector,
+    "y_combinator": YCombinatorConnector,
     "stub": StubConnector,
 }
 
@@ -22,6 +24,7 @@ __all__ = [
     "ProductHuntConnector",
     "TechCrunchConnector",
     "RedditConnector",
+    "YCombinatorConnector",
     "StubConnector",
     "CONNECTOR_TYPES",
 ]

@@ -1,8 +1,8 @@
-name: Daily Startup Scout Run
+name: Weekly Startup Scout Run
 
 on:
   schedule:
-    - cron: "30 3 * * *"  # 09:00 IST daily
+    - cron: "30 3 * * 1"  # Every Monday, 09:00 IST
   workflow_dispatch: {}
 
 permissions:
@@ -21,9 +21,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run daily pipeline
+      - name: Run weekly pipeline
         env:
           PRODUCT_HUNT_TOKEN: ${{ secrets.PRODUCT_HUNT_TOKEN }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python main.py run
 
@@ -32,5 +34,5 @@ jobs:
           git config user.name "startup-scout-bot"
           git config user.email "actions@github.com"
           git add -f reports/ data/
-          git diff --cached --quiet || git commit -m "Daily report: $(date +%F)"
+          git diff --cached --quiet || git commit -m "Weekly report: $(date +%F)"
           git push

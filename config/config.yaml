@@ -7,7 +7,7 @@
 
 connectors:
   hacker_news:
-    enabled: true
+    enabled: false
     type: hacker_news
     query: "startup"
     max_results: 30
@@ -15,16 +15,19 @@ connectors:
     exclude_domains: []    # extra domains to exclude, beyond the connector's built-in news-site list
 
   product_hunt:
-    enabled: true
+    enabled: false
     type: product_hunt
     max_results: 20
     # requires env var PRODUCT_HUNT_TOKEN - see .env.example.
     # Runs safely with an empty result set if the token isn't set.
 
   y_combinator:
-    enabled: false
-    type: stub
-    reason: "No public bulk API; YC company directory has no export endpoint."
+    enabled: true
+    type: y_combinator
+    batches: ["summer-2026", "spring-2026", "winter-2026"]
+    max_per_batch: 200
+    # update the batch list every ~6 months when YC announces a new one -
+    # see https://yc-oss.github.io/api/meta.json for the current list
 
   yc_requests_for_startups:
     enabled: false
@@ -42,7 +45,7 @@ connectors:
     reason: "No public API documented."
 
   techcrunch:
-    enabled: true
+    enabled: false
     type: techcrunch
     max_results: 20
 
@@ -72,7 +75,7 @@ connectors:
     reason: "No public API documented."
 
   reddit_startups:
-    enabled: true
+    enabled: false
     type: reddit
     subreddits: ["startups", "SideProject", "Entrepreneur"]
     listing: new
